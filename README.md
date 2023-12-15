@@ -29,9 +29,14 @@ A simple Linux package manager written in Zig.
 - Package metadata
   - Name length `(u8)`
   - Name string `([]const u8)`
+  - Description length `(u8)`
+  - Description string `([]const u8)`
   - Semver Major `(u8)`
   - Semver Minor `(u8)`
   - Semver Patch `(u8)`
+
+### Files
+
 - File count `(u16)`
 - File table
   - Path length `(u16)`
