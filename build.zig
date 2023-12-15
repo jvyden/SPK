@@ -11,6 +11,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    exe.addModule("clap", b.dependency("clap", .{}).module("clap"));
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

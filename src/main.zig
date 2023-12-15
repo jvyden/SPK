@@ -1,6 +1,7 @@
 const std = @import("std");
+const management = @import("./management.zig");
 
-pub fn print_help(basename: []const u8) !void {
+fn print_help(basename: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
     try stdout.print("SPK: Simple PacKage manager\n", .{});
 
@@ -19,15 +20,20 @@ fn print_help_cmd(out: anytype, basename: []const u8, comptime action: []const u
     try out.print("  {s} {s}: {s}\n", .{ basename, action, description });
 }
 
-pub fn main() !void {
-    // try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    // const allocator: std.mem.Allocator = std.heap.GeneralPurposeAllocator(.{});
-    // _ = allocator;
-
+pub fn main() !u8 {
     var argIterator = std.process.args();
     const basename = argIterator.next() orelse unreachable;
-    const action = argIterator.next() orelse return try print_help(basename);
+    const action = argIterator.next() orelse {
+        try print_help(basename);
+        return 0;
+    };
 
-    std.debug.print("yo man, you called me with the action '{s}'\n", .{action});
+    if (std.mem.eql(u8, action, "install")) {
+        try management.install(&argIterator);
+        return 0;
+    }
+
+    std.debug.print("Error: Unknown action '{s}'.\n", .{action});
+    try print_help(basename);
+    return 1;
 }
