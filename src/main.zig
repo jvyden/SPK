@@ -31,12 +31,23 @@ pub fn main() !u8 {
         return 0;
     };
 
-    if (std.mem.eql(u8, action, "install")) {
-        try management.installPackages(gpa.allocator(), &argIterator);
-        return 0;
-    }
+    const cliResult: bool = invokeCliCommand(action, gpa.allocator(), &argIterator) catch |err| {
+        std.log.err("error while invoking cli: {!}", .{err});
+        return 2;
+    };
 
-    std.debug.print("Error: Unknown action '{s}'.\n", .{action});
+    if (cliResult) return 0;
+
+    std.log.err("Unknown action '{s}'", .{action});
     try print_help(basename);
     return 1;
+}
+
+fn invokeCliCommand(action: []const u8, allocator: std.mem.Allocator, args: *std.process.ArgIterator) !bool {
+    if (std.mem.eql(u8, action, "install")) {
+        try management.installPackages(allocator, args);
+        return true;
+    }
+
+    return false;
 }
