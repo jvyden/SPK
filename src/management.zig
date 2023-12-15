@@ -2,7 +2,7 @@ const std = @import("std");
 const repo = @import("repo.zig");
 const PackageInfo = @import("types/package_info.zig");
 
-pub fn install(allocator: std.mem.Allocator, args: *std.process.ArgIterator) !void {
+pub fn installPackages(allocator: std.mem.Allocator, args: *std.process.ArgIterator) !void {
     var packages_in_repo = try repo.getPackages(allocator);
     defer packages_in_repo.deinit();
 

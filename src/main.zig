@@ -32,7 +32,7 @@ pub fn main() !u8 {
     };
 
     if (std.mem.eql(u8, action, "install")) {
-        try management.install(gpa.allocator(), &argIterator);
+        try management.installPackages(gpa.allocator(), &argIterator);
         return 0;
     }
 

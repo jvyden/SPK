@@ -19,3 +19,13 @@ A simple Linux package manager written in Zig.
     Creates a package file from the directory specified in `[package-root]`.
 - `spk create-init [package-root] [name]`
     Initializes an empty package with a blank manifest in the `[package-root]` with the given name.
+
+## Package format
+
+### Hierarchy
+
+- /
+  - metadata.json
+  - data/ *(gets extracted to root)*
+    - bin/
+    - ...
