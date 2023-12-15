@@ -8,7 +8,7 @@ A simple Linux package manager written in Zig.
 - `spk install [package]`
     Installs a package.
 - `spk remove|uninstall [package]`
-    Removes a package.
+    Removes a package from the system.
 - `spk ls`
     Lists currently installed packages.
 - `spk search [query]`
@@ -16,6 +16,6 @@ A simple Linux package manager written in Zig.
 
 ### Creation
 - `spk create [package-root]`
-    Creates a package file from the directory specified in `[package-root]`
+    Creates a package file from the directory specified in `[package-root]`.
 - `spk create-init [package-root] [name]`
     Initializes an empty package with a blank manifest in the `[package-root]` with the given name.
