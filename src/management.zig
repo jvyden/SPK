@@ -1,13 +1,18 @@
 const std = @import("std");
+const repo = @import("repo.zig");
+const PackageInfo = @import("types/package_info.zig");
 
-pub fn install(args: *std.process.ArgIterator) !void {
-    var package_name: ?[]const u8 = args.next();
-    while (package_name != null) {
-        install_package(package_name.?);
-        package_name = args.next();
+pub fn install(allocator: std.mem.Allocator, args: *std.process.ArgIterator) !void {
+    var packages_in_repo = try repo.getPackages(allocator);
+    defer packages_in_repo.deinit();
+
+    while (args.next()) |package_name| {
+        const package: ?PackageInfo = packages_in_repo.get(package_name) orelse @panic("FUCK");
+
+        installPackage(package.?);
     }
 }
 
-fn install_package(package_name: []const u8) void {
-    std.debug.print("install pkg {s}\n", .{package_name});
+fn installPackage(package: PackageInfo) void {
+    std.log.info("installing pkg {s}", .{package.name});
 }

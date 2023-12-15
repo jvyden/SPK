@@ -21,6 +21,9 @@ fn print_help_cmd(out: anytype, basename: []const u8, comptime action: []const u
 }
 
 pub fn main() !u8 {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
     var argIterator = std.process.args();
     const basename = argIterator.next() orelse unreachable;
     const action = argIterator.next() orelse {
@@ -29,7 +32,7 @@ pub fn main() !u8 {
     };
 
     if (std.mem.eql(u8, action, "install")) {
-        try management.install(&argIterator);
+        try management.install(gpa.allocator(), &argIterator);
         return 0;
     }
 
