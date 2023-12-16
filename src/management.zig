@@ -1,6 +1,7 @@
 const std = @import("std");
 const repo = @import("repo.zig");
 const PackageMetadata = @import("types/package_file/package_metadata.zig");
+const PackageFile = @import("types/package_file/package_file.zig");
 
 const PackageManagementError = error{
     PackageNotFound,
@@ -51,10 +52,11 @@ pub fn printInfoForPackageFile(allocator: std.mem.Allocator, package_filename: [
     const file_count: u16 = try reader.readInt(u16, .little);
     std.log.debug("File count: {}", .{file_count});
 
-    for (0..file_count) |i| {
-        _ = i;
+    const files: []PackageFile = try allocator.alloc(PackageFile, file_count);
+    defer allocator.free(files);
 
-        try printFileTableEntryForPackageFile(allocator, reader);
+    for (0..file_count) |i| {
+        files[i] = try printFileTableEntryForPackageFile(allocator, reader);
     }
 
     // TODO: error if not at end of file
@@ -68,8 +70,19 @@ fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) !
     return str;
 }
 
-fn printFileTableEntryForPackageFile(allocator: std.mem.Allocator, reader: anytype) !void {
+fn printFileTableEntryForPackageFile(allocator: std.mem.Allocator, reader: anytype) !PackageFile {
     const path: []u8 = try readString(u16, allocator, reader);
     defer allocator.free(path);
-    std.log.debug("File path ({} bytes): '{s}'", .{ path.len, path });
+    // std.log.debug("File path ({} bytes): '{s}'", .{ path.len, path });
+
+    const data_offset: u32 = try reader.readInt(u32, .little);
+    const data_length: u32 = try reader.readInt(u32, .little);
+
+    std.log.debug("File {s}: {} bytes @ 0x{x}", .{ path, data_length, data_offset });
+
+    return .{
+        .path = path,
+        .data_offset = data_offset,
+        .data_length = data_length,
+    };
 }
