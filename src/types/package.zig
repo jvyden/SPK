@@ -5,6 +5,10 @@ const std = @import("std");
 header: PackageHeader,
 file_table: []const PackageFile,
 
+const ParseError = error{
+    InvalidMagic,
+};
+
 const Self = @This();
 
 fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) ![]u8 {
@@ -18,7 +22,7 @@ fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) !
 pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self {
     const magic: u32 = try reader.readInt(u32, .big);
     if (magic != 0x2E53504B) {
-        // return PackageManagementError.InvalidMagic;
+        return ParseError.InvalidMagic;
     }
 
     const format_version: u8 = try reader.readByte();
