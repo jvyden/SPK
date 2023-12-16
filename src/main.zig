@@ -49,5 +49,12 @@ fn invokeCliCommand(action: []const u8, allocator: std.mem.Allocator, args: *std
         return true;
     }
 
+    if (std.mem.eql(u8, action, "info")) {
+        const package = args.next();
+        if (package == null) return false;
+        try management.printInfoForPackageFile(allocator, package.?);
+        return true;
+    }
+
     return false;
 }
