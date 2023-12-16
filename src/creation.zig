@@ -13,20 +13,26 @@ pub fn printInfoForPackageFile(allocator: std.mem.Allocator, package_filename: [
     std.log.info("{s}", .{std.json.fmt(package, .{ .whitespace = .indent_2 })});
 }
 
-fn addFilesFromDirectory(allocator: std.mem.Allocator, dir: std.fs.Dir, files: *std.ArrayList(PackageFile)) !void {
+fn addFilesFromDirectory(allocator: std.mem.Allocator, path: []const u8, dir: std.fs.Dir, files: *std.ArrayList(PackageFile)) !void {
     var it = dir.iterate();
     while (try it.next()) |item| {
-        std.log.debug("Adding {s} {s} to package...", .{ @tagName(item.kind), item.name });
+        const qualifiedPath = try std.fs.path.join(allocator, &.{ path, item.name });
+        defer allocator.free(qualifiedPath);
+
+        std.log.debug("Adding {s} {s} to package...", .{ @tagName(item.kind), qualifiedPath });
         if (item.kind == .directory) {
             var sub_dir = try dir.openDir(item.name, .{ .iterate = true });
             defer sub_dir.close();
 
-            try addFilesFromDirectory(allocator, sub_dir, files);
+            try addFilesFromDirectory(allocator, qualifiedPath, sub_dir, files);
         } else if (item.kind == .file) {
+            const fd = try dir.openFile(item.name, .{});
+
             try files.append(.{
-                .path = try allocator.dupe(u8, item.name),
-                .data_length = 0,
+                .path = try allocator.dupe(u8, qualifiedPath),
+                .data_length = @intCast((try fd.stat()).size),
                 .data_offset = 0,
+                .fd = fd,
             });
         }
     }
@@ -38,7 +44,7 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
     var files = std.ArrayList(PackageFile).init(allocator);
     defer files.deinit();
 
-    try addFilesFromDirectory(allocator, root_dir, &files);
+    try addFilesFromDirectory(allocator, "/", root_dir, &files);
     defer root_dir.close();
 
     const package_name: []const u8 = "pkg";
@@ -55,7 +61,7 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
             .magic = Package.header_magic,
             .format_version = 1,
             .package_metadata = .{
-                .name = "obama",
+                .name = "obama", // TODO, duh.
                 .description = "presidential",
                 .semver_major = 4,
                 .semver_minor = 2,
@@ -65,7 +71,7 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
         .file_table = files_slice,
     };
 
-    std.log.info("{s}", .{std.json.fmt(package, .{ .whitespace = .indent_2 })});
+    // std.log.info("{s}", .{std.json.fmt(package, .{ .whitespace = .indent_2 })});
 
     var file = try std.fs.cwd().createFile("pkg.spk", .{});
     defer file.close();
