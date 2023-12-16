@@ -19,6 +19,7 @@ fn addFilesFromDirectory(allocator: std.mem.Allocator, path: []const u8, dir: st
     while (try it.next()) |item| {
         const qualifiedPath = try std.fs.path.join(allocator, &.{ path, item.name });
         defer allocator.free(qualifiedPath);
+        if (std.mem.eql(u8, qualifiedPath, "/spk.json")) continue;
 
         std.log.debug("Adding {s} {s} to package...", .{ @tagName(item.kind), qualifiedPath });
         if (item.kind == .directory) {
@@ -41,12 +42,12 @@ fn addFilesFromDirectory(allocator: std.mem.Allocator, path: []const u8, dir: st
 
 pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root: []const u8) !void {
     var root_dir = try std.fs.cwd().openDir(package_root, .{ .iterate = true });
+    defer root_dir.close();
 
     var files = std.ArrayList(PackageFile).init(allocator);
     defer files.deinit();
 
     try addFilesFromDirectory(allocator, "/", root_dir, &files);
-    defer root_dir.close();
 
     const package_name: []const u8 = "pkg";
     _ = package_name;
@@ -57,14 +58,25 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
         file.deinit(allocator);
     };
 
+    const metadata_file = try root_dir.openFile("spk.json", .{ .mode = .read_only });
+    defer metadata_file.close();
+
+    var reader = std.json.reader(allocator, metadata_file.reader());
+    defer reader.deinit();
+
+    const parsed = try std.json.parseFromTokenSource(SpkMetadataJson, allocator, &reader, .{});
+    defer parsed.deinit();
+
+    const metadata = parsed.value;
+
     const package: Package = .{
         .header = .{
             .magic = Package.header_magic,
             .format_version = 1,
             .package_metadata = .{
-                .name = "obama", // TODO, duh.
-                .description = "presidential",
-                .semver_major = 4,
+                .name = metadata.name,
+                .description = metadata.description,
+                .semver_major = 4, // TODO
                 .semver_minor = 2,
                 .semver_patch = 0,
             },
@@ -72,7 +84,10 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
         .file_table = files_slice,
     };
 
-    var file = try std.fs.cwd().createFile("pkg.spk", .{});
+    const final_filename = try std.fmt.allocPrint(allocator, "{s}.spk", .{package.header.package_metadata.name});
+    defer allocator.free(final_filename);
+
+    var file = try std.fs.cwd().createFile(final_filename, .{});
     defer file.close();
 
     try package.toWriter(file.writer());
