@@ -31,11 +31,9 @@ pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self 
     std.log.debug("Format version: {}", .{format_version});
 
     const name: []u8 = try readString(u8, allocator, reader);
-    // defer allocator.free(name);
     std.log.debug("Package name: '{s}'", .{name});
 
     const description: []u8 = try readString(u8, allocator, reader);
-    // defer allocator.free(description);
     std.log.debug("Package description: '{s}'", .{description});
 
     const semver_major: u8 = try reader.readByte();
@@ -47,7 +45,6 @@ pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self 
     std.log.debug("File count: {}", .{file_count});
 
     const files: []PackageFile = try allocator.alloc(PackageFile, file_count);
-    // defer allocator.free(files);
 
     for (0..file_count) |i| {
         files[i] = try fileTableEntryFromReader(allocator, reader);
@@ -98,8 +95,6 @@ pub fn toWriter(self: Self, fs_writer: std.fs.File.Writer) !void {
         minimum_offset += file.path.len;
     }
 
-    // minimum_offset += 4; // magic shit
-
     // Write the file table
     for (self.file_table) |file| {
         try writer.writeInt(u16, @intCast(file.path.len), .little);
@@ -129,8 +124,6 @@ pub fn toWriter(self: Self, fs_writer: std.fs.File.Writer) !void {
 
 fn fileTableEntryFromReader(allocator: std.mem.Allocator, reader: anytype) !PackageFile {
     const path: []u8 = try readString(u16, allocator, reader);
-    // defer allocator.free(path);
-    // std.log.debug("File path ({} bytes): '{s}'", .{ path.len, path });
 
     const data_offset: u32 = try reader.readInt(u32, .little);
     const data_length: u32 = try reader.readInt(u32, .little);

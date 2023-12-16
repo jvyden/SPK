@@ -71,8 +71,6 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
         .file_table = files_slice,
     };
 
-    // std.log.info("{s}", .{std.json.fmt(package, .{ .whitespace = .indent_2 })});
-
     var file = try std.fs.cwd().createFile("pkg.spk", .{});
     defer file.close();
 
