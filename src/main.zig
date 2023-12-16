@@ -14,6 +14,7 @@ fn print_help(basename: []const u8) !void {
     try stdout.print("\nCreation:\n", .{});
     try print_help_cmd(stdout, basename, "create", "Creates a package file from the directory specified in `[package-root]`.");
     try print_help_cmd(stdout, basename, "create-init", "Initializes an empty package with a blank manifest in the `[package-root]` with the given name.");
+    try print_help_cmd(stdout, basename, "info", "Parses an SPK file's header and returns a JSON structure of the parsed data.");
 }
 
 fn print_help_cmd(out: anytype, basename: []const u8, comptime action: []const u8, comptime description: []const u8) !void {
