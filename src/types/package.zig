@@ -9,6 +9,8 @@ const ParseError = error{
     InvalidMagic,
 };
 
+pub const header_magic: comptime_int = 0x2E53504B; // ".SPK"
+
 const Self = @This();
 
 fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) ![]u8 {
@@ -21,7 +23,7 @@ fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) !
 
 pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self {
     const magic: u32 = try reader.readInt(u32, .big);
-    if (magic != 0x2E53504B) {
+    if (magic != header_magic) {
         return ParseError.InvalidMagic;
     }
 
@@ -67,6 +69,30 @@ pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self 
     };
 }
 
+pub fn toWriter(self: Self, writer: std.fs.File.Writer) !void {
+    try writer.writeInt(u32, header_magic, .big);
+    try writer.writeByte(self.header.format_version);
+
+    try writer.writeByte(@intCast(self.header.package_metadata.name.len));
+    try writer.writeAll(self.header.package_metadata.name);
+
+    try writer.writeByte(@intCast(self.header.package_metadata.description.len));
+    try writer.writeAll(self.header.package_metadata.description);
+
+    try writer.writeByte(self.header.package_metadata.semver_major);
+    try writer.writeByte(self.header.package_metadata.semver_minor);
+    try writer.writeByte(self.header.package_metadata.semver_patch);
+
+    try writer.writeInt(u16, @intCast(self.file_table.len), .little);
+    for (self.file_table) |file| {
+        try writer.writeInt(u16, @intCast(file.path.len), .little);
+        try writer.writeAll(file.path);
+
+        try writer.writeInt(u32, file.data_offset, .little);
+        try writer.writeInt(u32, file.data_length, .little);
+    }
+}
+
 fn fileTableEntryFromReader(allocator: std.mem.Allocator, reader: anytype) !PackageFile {
     const path: []u8 = try readString(u16, allocator, reader);
     // defer allocator.free(path);
@@ -86,7 +112,7 @@ fn fileTableEntryFromReader(allocator: std.mem.Allocator, reader: anytype) !Pack
 
 pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     for (self.file_table) |file| {
-        allocator.free(file.path);
+        file.deinit(allocator);
     }
 
     allocator.free(self.file_table);

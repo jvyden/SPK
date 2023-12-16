@@ -1,5 +1,6 @@
 const std = @import("std");
 const management = @import("./management.zig");
+const creation = @import("./creation.zig");
 
 fn print_help(basename: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
@@ -47,15 +48,17 @@ pub fn main() !u8 {
 fn invokeCliCommand(action: []const u8, allocator: std.mem.Allocator, args: *std.process.ArgIterator) !bool {
     if (std.mem.eql(u8, action, "install")) {
         try management.installPackages(allocator, args);
-        return true;
-    }
-
-    if (std.mem.eql(u8, action, "info")) {
+    } else if (std.mem.eql(u8, action, "info")) {
         const package = args.next();
         if (package == null) return false;
-        try management.printInfoForPackageFile(allocator, package.?);
-        return true;
+        try creation.printInfoForPackageFile(allocator, package.?);
+    } else if (std.mem.eql(u8, action, "create")) {
+        const package_root = args.next();
+        if (package_root == null) return false;
+        try creation.createPackageFileFromDirectory(allocator, package_root.?);
+    } else {
+        return false;
     }
 
-    return false;
+    return true;
 }
