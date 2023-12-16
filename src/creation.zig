@@ -11,7 +11,7 @@ pub fn printInfoForPackageFile(allocator: std.mem.Allocator, package_filename: [
 
     const package: Package = try Package.fromReader(allocator, reader.any());
     defer package.deinit(allocator);
-    std.log.info("{s}", .{std.json.fmt(package, .{ .whitespace = .indent_2 })});
+    try std.fmt.format(std.io.getStdOut().writer(), "{s}\n", .{std.json.fmt(package, .{ .whitespace = .indent_2, .emit_null_optional_fields = false })});
 }
 
 fn addFilesFromDirectory(allocator: std.mem.Allocator, path: []const u8, dir: std.fs.Dir, files: *std.ArrayList(PackageFile)) !void {
