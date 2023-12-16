@@ -13,6 +13,8 @@ struct file {
   char path[path_length];
   u32 data_offset;
   u32 data_length;
+  
+  u8 data[data_length] @ data_offset;
 };
 
 struct package {

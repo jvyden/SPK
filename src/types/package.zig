@@ -69,7 +69,10 @@ pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self 
     };
 }
 
-pub fn toWriter(self: Self, writer: std.fs.File.Writer) !void {
+pub fn toWriter(self: Self, fs_writer: std.fs.File.Writer) !void {
+    var countingWriter = std.io.countingWriter(fs_writer);
+    var writer = countingWriter.writer();
+
     try writer.writeInt(u32, header_magic, .big);
     try writer.writeByte(self.header.format_version);
 
@@ -84,12 +87,43 @@ pub fn toWriter(self: Self, writer: std.fs.File.Writer) !void {
     try writer.writeByte(self.header.package_metadata.semver_patch);
 
     try writer.writeInt(u16, @intCast(self.file_table.len), .little);
+
+    const package_file_size: comptime_int = @sizeOf(u32) + @sizeOf(u32) + @sizeOf(u16);
+
+    // The minimum offset a new file can be added at.
+    var minimum_offset: u64 = countingWriter.bytes_written + (package_file_size * self.file_table.len);
+
+    // Add sizes of path to offset
+    for (self.file_table) |file| {
+        minimum_offset += file.path.len;
+    }
+
+    // minimum_offset += 4; // magic shit
+
+    // Write the file table
     for (self.file_table) |file| {
         try writer.writeInt(u16, @intCast(file.path.len), .little);
         try writer.writeAll(file.path);
 
-        try writer.writeInt(u32, file.data_offset, .little);
+        try writer.writeInt(u32, @intCast(minimum_offset), .little);
         try writer.writeInt(u32, file.data_length, .little);
+
+        minimum_offset += file.data_length;
+    }
+
+    // Write the files in the file table
+    for (self.file_table) |file| {
+        const fd = file.fd.?;
+        var buf: [4096]u8 = undefined;
+
+        while (blk: {
+            const read = try fd.read(&buf);
+            if (read == 0) break :blk null;
+            break :blk read;
+        }) |read| {
+            const data = buf[0..read];
+            try writer.writeAll(data);
+        }
     }
 }
 
