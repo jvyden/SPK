@@ -7,15 +7,15 @@ fn print_help(basename: []const u8) !void {
     try stdout.print("SPK: Simple PacKage manager\n", .{});
 
     try stdout.print("\nManagement:\n", .{});
-    try print_help_cmd(stdout, basename, "install", "Installs a package.");
-    try print_help_cmd(stdout, basename, "remove|uninstall", "Removes a package from the system.");
-    try print_help_cmd(stdout, basename, "ls", "Lists currently installed packages.");
-    try print_help_cmd(stdout, basename, "search", "Searches your repository cache for packages by their names and descriptions.");
+    try print_help_cmd(stdout, basename, "install [packages]", "Installs a package.");
+    // try print_help_cmd(stdout, basename, "remove|uninstall", "Removes a package from the system.");
+    // try print_help_cmd(stdout, basename, "ls", "Lists currently installed packages.");
+    // try print_help_cmd(stdout, basename, "search", "Searches your repository cache for packages by their names and descriptions.");
 
     try stdout.print("\nCreation:\n", .{});
-    try print_help_cmd(stdout, basename, "create", "Creates a package file from the directory specified in `[package-root]`.");
-    try print_help_cmd(stdout, basename, "create-init", "Initializes an empty package with a blank manifest in the `[package-root]` with the given name.");
-    try print_help_cmd(stdout, basename, "info", "Parses an SPK file's header and returns a JSON structure of the parsed data.");
+    try print_help_cmd(stdout, basename, "create [package-root]", "Creates a package file from the directory specified in `[package-root]`.");
+    try print_help_cmd(stdout, basename, "create-init [package-root]", "Initializes an empty package with a blank manifest in the `[package-root]` with the given name.");
+    try print_help_cmd(stdout, basename, "info [spk-file]", "Parses an SPK file's header and returns a JSON structure of the parsed data.");
 }
 
 fn print_help_cmd(out: anytype, basename: []const u8, comptime action: []const u8, comptime description: []const u8) !void {
