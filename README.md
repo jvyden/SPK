@@ -24,7 +24,7 @@ A simple Linux package manager written in Zig.
 
 ### Header
 
-- Magic: `.SPK` in hex `0x2E53504B` `(u32)`
+- Magic: `.SPK` in BE hex `0x2E53504B` `(u32)`
 - Format version `(u8)`
 - Package metadata
   - Name length `(u8)`

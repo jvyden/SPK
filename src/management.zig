@@ -35,21 +35,41 @@ pub fn printInfoForPackageFile(allocator: std.mem.Allocator, package_filename: [
     const format_version: u8 = try reader.readByte();
     std.log.debug("Format version: {}", .{format_version});
 
-    const name_length: u8 = try reader.readByte();
-    const name: []u8 = try allocator.alloc(u8, name_length);
+    const name: []u8 = try readString(u8, allocator, reader);
     defer allocator.free(name);
-    _ = try reader.readAtLeast(name, name_length);
-    std.log.debug("Package name ({} bytes): '{s}'", .{ name_length, name });
+    std.log.debug("Package name: '{s}'", .{name});
 
-    const description_length: u8 = try reader.readByte();
-    const description: []u8 = try allocator.alloc(u8, description_length);
+    const description: []u8 = try readString(u8, allocator, reader);
     defer allocator.free(description);
-    _ = try reader.readAtLeast(description, description_length);
-    std.log.debug("Package description ({} bytes): '{s}'", .{ description_length, description });
+    std.log.debug("Package description: '{s}'", .{description});
 
     const semver_major: u8 = try reader.readByte();
     const semver_minor: u8 = try reader.readByte();
     const semver_patch: u8 = try reader.readByte();
-
     std.log.debug("Package version: {}.{}.{}", .{ semver_major, semver_minor, semver_patch });
+
+    const file_count: u16 = try reader.readInt(u16, .little);
+    std.log.debug("File count: {}", .{file_count});
+
+    for (0..file_count) |i| {
+        _ = i;
+
+        try printFileTableEntryForPackageFile(allocator, reader);
+    }
+
+    // TODO: error if not at end of file
+}
+
+fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) ![]u8 {
+    const str_length: T = try reader.readInt(T, .little);
+    const str: []u8 = try allocator.alloc(u8, str_length);
+
+    _ = try reader.readAtLeast(str, str_length);
+    return str;
+}
+
+fn printFileTableEntryForPackageFile(allocator: std.mem.Allocator, reader: anytype) !void {
+    const path: []u8 = try readString(u16, allocator, reader);
+    defer allocator.free(path);
+    std.log.debug("File path ({} bytes): '{s}'", .{ path.len, path });
 }
