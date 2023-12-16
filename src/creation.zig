@@ -1,6 +1,7 @@
 const std = @import("std");
 const Package = @import("types/package.zig");
-const PackageFile = @import("types/package_file//package_file.zig");
+const PackageFile = @import("types/package_file/package_file.zig");
+const SpkMetadataJson = @import("types/spk_metadata_json.zig");
 
 pub fn printInfoForPackageFile(allocator: std.mem.Allocator, package_filename: []const u8) !void {
     const file = try std.fs.cwd().openFile(package_filename, .{ .mode = .read_only });
@@ -75,4 +76,20 @@ pub fn createPackageFileFromDirectory(allocator: std.mem.Allocator, package_root
     defer file.close();
 
     try package.toWriter(file.writer());
+}
+
+pub fn createEmptyPackageSkeleton(name: []const u8) !void {
+    std.fs.cwd().makeDir(name) catch |err| {
+        if (err != error.PathAlreadyExists) return err;
+    };
+    var dir = try std.fs.cwd().openDir(name, .{}); // TODO: make dir if not exists
+    defer dir.close();
+
+    const metadata: SpkMetadataJson = .{ .name = name, .description = "A description of the package.", .semver = "1.0.0" };
+
+    var file = try dir.createFile("spk.json", .{});
+    defer file.close();
+
+    try std.json.stringify(metadata, .{ .whitespace = .indent_4 }, file.writer());
+    std.log.info("Successfully created empty package skeleton at '{s}/'.", .{name});
 }

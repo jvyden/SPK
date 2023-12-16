@@ -58,6 +58,11 @@ fn invokeCliCommand(action: []const u8, allocator: std.mem.Allocator, args: *std
         if (package_root == null) return false;
 
         try creation.createPackageFileFromDirectory(allocator, package_root.?);
+    } else if (std.mem.eql(u8, action, "create-init")) {
+        const name = args.next();
+        if (name == null) return false;
+
+        try creation.createEmptyPackageSkeleton(name.?);
     } else {
         return false;
     }
