@@ -1,9 +1,7 @@
 # SPK - Simple PacKage manager
-
 A simple Linux package manager written in Zig.
 
 ## Commands
-
 ### Management
 - `spk install [package]`
     Installs a package.
@@ -23,9 +21,9 @@ A simple Linux package manager written in Zig.
     Parses an SPK file's header and returns a JSON structure of the parsed data.
 
 ## Package format (.spk)
+This is the format that package metadata and files will be shipped in
 
 ### Header
-
 - Magic: `.SPK` in BE hex `0x2E53504B` `(u32)`
 - Format version `(u8)`
 - Package metadata
@@ -38,7 +36,6 @@ A simple Linux package manager written in Zig.
   - Semver Patch `(u8)`
 
 ### Files
-
 - File count `(u16)`
 - File table
   - Path length `(u16)`
@@ -48,7 +45,28 @@ A simple Linux package manager written in Zig.
 
 
 ### Hierarchy
-
 There is no real significant hierarchy for files in the File table.
 
-All files in the package will be extracted directly to the root of the filesystem.
+All files in the package will be extracted directly to the root of the filesystem *(or in the case of `spk extract`, `./package_name`)*.
+
+## Installation metadata format (.spki)
+This is how SPK records the list of installed packages, in addition to owned files and metadata such as who installed the package and when.
+
+All installation metadata format files (henceforth referred to as simply SPKI) will be located at `/var/lib/spk/installed`, in accordance with the [Filesystem Hierarchy Standard Version 3.0](https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html#varlibVariableStateInformation).
+
+The file name will simply be the name of the installed package.
+
+### Header
+- Magic: `SPKI` in BE hex `0x53504B49` `(u32)`
+- Format version `(u8)`
+- Package metadata
+  - Semver Major `(u8)`
+  - Semver Minor `(u8)`
+  - Semver Patch `(u8)`
+- Installation metadata
+  - Installing Effective User ID (EUID) `(u16)`
+  - Original Installation date `(u64)`
+  - Last update `(u64)`
+
+### Owned files
+TODO, basicalyl sha1 and relevant file paths
