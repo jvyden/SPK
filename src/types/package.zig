@@ -21,6 +21,16 @@ fn readString(comptime T: type, allocator: std.mem.Allocator, reader: anytype) !
     return str;
 }
 
+pub fn fromCwdFile(allocator: std.mem.Allocator, package_filename: []const u8) !Self {
+    const file = try std.fs.cwd().openFile(package_filename, .{ .mode = .read_only });
+    defer file.close();
+
+    const reader = file.reader();
+
+    const package: Self = try fromReader(allocator, reader.any());
+    return package;
+}
+
 pub fn fromReader(allocator: std.mem.Allocator, reader: std.io.AnyReader) !Self {
     const magic: u32 = try reader.readInt(u32, .big);
     if (magic != header_magic) {

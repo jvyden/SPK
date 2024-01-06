@@ -8,6 +8,7 @@ fn print_help(basename: []const u8) !void {
 
     try stdout.print("\nManagement:\n", .{});
     try print_help_cmd(stdout, basename, "install [packages]", "Installs a package.");
+    try print_help_cmd(stdout, basename, "extract [spk-file]", "Extracts a package to the current working directory under `(package name)/`.");
     // try print_help_cmd(stdout, basename, "remove|uninstall", "Removes a package from the system.");
     // try print_help_cmd(stdout, basename, "ls", "Lists currently installed packages.");
     // try print_help_cmd(stdout, basename, "search", "Searches your repository cache for packages by their names and descriptions.");
@@ -19,12 +20,13 @@ fn print_help(basename: []const u8) !void {
 }
 
 fn print_help_cmd(out: anytype, basename: []const u8, comptime action: []const u8, comptime description: []const u8) !void {
-    try out.print("  {s} {s}: {s}\n", .{ basename, action, description });
+    try out.print(" {s} {s}\n\t{s}\n", .{ basename, action, description });
 }
 
 pub fn main() !u8 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
+    // std.log.info("{s}", .{try std.fs.getAppDataDir(gpa.allocator(), "spk")});
 
     var argIterator = std.process.args();
     const basename = argIterator.next() orelse unreachable;
@@ -63,6 +65,11 @@ fn invokeCliCommand(action: []const u8, allocator: std.mem.Allocator, args: *std
         if (name == null) return false;
 
         try creation.createEmptyPackageSkeleton(name.?);
+    } else if (std.mem.eql(u8, action, "extract")) {
+        const package_name = args.next();
+        if (package_name == null) return false;
+
+        try management.extractPackageToCwdFromFile(allocator, package_name.?);
     } else {
         return false;
     }
